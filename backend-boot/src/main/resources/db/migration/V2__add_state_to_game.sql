@@ -1,0 +1,1 @@
+ALTER TABLE "games" ADD COLUMN "state" CHAR(12) DEFAULT 'OPEN';

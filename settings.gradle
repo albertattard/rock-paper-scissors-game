@@ -1,0 +1,4 @@
+rootProject.name = "rock-paper-scissors-game"
+
+include("backend-boot")
+include("frontend-react")

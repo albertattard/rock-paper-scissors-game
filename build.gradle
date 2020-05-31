@@ -1,0 +1,27 @@
+plugins {
+  id 'com.dorongold.task-tree' version '1.5'
+}
+
+subprojects {
+  version = '1.0'
+}
+
+task copyFrontendResources {
+  group = 'build'
+  description = 'Copy frontend resources into backend'
+  dependsOn(":frontend-react:build")
+
+  doFirst {
+    delete './backend-boot/generated/main/resources/static'
+    copy {
+      from('./frontend-react/build')
+      into('./backend-boot/generated/main/resources/static')
+    }
+  }
+}
+
+task assembleAll {
+  group = 'build'
+  description = 'Build combined backend & frontend into one JAR'
+  dependsOn('copyFrontendResources', ':frontend-react:build')
+}
