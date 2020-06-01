@@ -1,5 +1,6 @@
 package demo.games.pvp;
 
+import demo.games.shared.Hand;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,10 +25,10 @@ public class PvpGameController {
 
   @ResponseBody
   @PostMapping( "/game" )
-  public ResponseEntity<Void> create( @RequestBody CreateGame game ) throws URISyntaxException {
+  public ResponseEntity<ActiveGame> create( final @RequestBody CreateGame game ) throws URISyntaxException {
     final ActiveGame response = service.create( game.getPlayer1() );
     final URI uri = new URI( String.format( "/game/%s", response.getCode() ) );
-    return ResponseEntity.created( uri ).build();
+    return ResponseEntity.created( uri ).body( response );
   }
 
   @ResponseBody
@@ -56,11 +57,5 @@ public class PvpGameController {
   @GetMapping( "/game/list/open" )
   public List<ActiveGame> listOpenGames() {
     return service.listActiveGames();
-  }
-
-  @ResponseBody
-  @GetMapping( "/game/list/closed" )
-  public List<GameDetails> listClosedGames() {
-    return service.listClosedGames();
   }
 }

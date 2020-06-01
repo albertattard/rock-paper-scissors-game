@@ -12,14 +12,56 @@ class App extends Component {
     closedGames: []
   }
 
+  constructor(props) {
+    super(props);
+
+    this.checkGameStatus = this.checkGameStatus.bind(this);
+  }
+
+  playGame(player) {
+    const {opponentType} = this.state;
+    if (opponentType === 'COMPUTER') {
+      this.playerAgainstComputer(player);
+    } else if (opponentType === 'PLAYER') {
+      this.createNewGame(player)
+    }
+  }
+
   createNewGame(player1) {
     fetch('/game', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({player1})
     })
-      // .then(response => this.setState({message: response.headers.get('Location')}))
+      .then(response => response.json())
+      .then(json => {
+        const {code} = json;
+        this.setState({
+          gameState: 'WAITING_FOR_OPPONENT',
+          code,
+          result: {}
+        })
+      })
       .then(() => this.updateActiveGames())
+      .then(() => setTimeout(this.checkGameStatus, 1000))
+      .catch(e => console.log(e));
+  }
+
+  checkGameStatus() {
+    fetch(`/game/${this.state.code}`)
+      .then(response => response.json())
+      .then(json => {
+        const {state} = json;
+        if (state === 'ACTIVE') {
+          setTimeout(this.checkGameStatus, 1000)
+        } else {
+          const {player1, player2, outcome} = json;
+          this.setState({
+            gameState: 'OPPONENT_PLAYED',
+            result: {player: player1, opponent: player2, outcome}
+          })
+        }
+      })
       .catch(e => console.log(e));
   }
 
@@ -89,9 +131,9 @@ class App extends Component {
             <option value="PLAYER">Player</option>
           </select>
         </p>
-        <button onClick={() => this.playerAgainstComputer("ROCK")}>Rock</button>
-        <button onClick={() => this.playerAgainstComputer("PAPER")}>Paper</button>
-        <button onClick={() => this.playerAgainstComputer("SCISSORS")}>Scissors</button>
+        <button onClick={() => this.playGame("ROCK")}>Rock</button>
+        <button onClick={() => this.playGame("PAPER")}>Paper</button>
+        <button onClick={() => this.playGame("SCISSORS")}>Scissors</button>
         {this.renderPlayedGameStatus()}
       </div>
     );
@@ -112,7 +154,7 @@ class App extends Component {
   renderWaitingForOpponentGameStatus() {
     return (
       <div className="played-game">
-        <h1>Waiting for opponent to play...</h1>
+        <h1>Waiting for opponent to play {this.state.code}...</h1>
       </div>
     );
   }
