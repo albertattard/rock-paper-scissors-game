@@ -5,9 +5,9 @@ import demo.games.model.AllGames;
 import demo.games.model.CreateGame;
 import demo.games.model.GameDetails;
 import demo.games.model.Hand;
-import demo.games.model.RandomHand;
 import demo.games.model.PlayGame;
 import demo.games.model.PvcGameResult;
+import demo.games.model.RandomHand;
 import demo.games.service.GameService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -31,50 +31,51 @@ public class GameController {
     this.service = service;
   }
 
-  @GetMapping( "/hand" )
-  public @ResponseBody RandomHand hand() {
-    final Hand hand = service.random();
+  @GetMapping( "/randomHand" )
+  public @ResponseBody RandomHand randomHand() {
+    final Hand hand = service.randomHand();
     return new RandomHand( hand );
   }
 
-  @GetMapping( "/play/{player}" )
-  public @ResponseBody PvcGameResult play( final @PathVariable( "player" ) Hand player ) {
-    return service.play( player );
+  @GetMapping( "/pvc/{player}" )
+  public @ResponseBody PvcGameResult playAgainstComputer( final @PathVariable( "player" ) Hand player ) {
+    return service.playAgainstComputer( player );
   }
 
   @ResponseBody
-  @PostMapping( "/game" )
-  public ResponseEntity<ActiveGame> create( final @RequestBody CreateGame game ) throws URISyntaxException {
-    final ActiveGame response = service.create( game.getPlayer1() );
-    final URI uri = new URI( String.format( "/game/%s", response.getCode() ) );
+  @PostMapping( "/pvp" )
+  public ResponseEntity<ActiveGame> createPvpGame( final @RequestBody CreateGame game ) throws URISyntaxException {
+    final ActiveGame response = service.createPvpGame( game.getPlayer1() );
+    final URI uri = new URI( String.format( "/pvp/%s", response.getCode() ) );
     return ResponseEntity.created( uri ).body( response );
   }
 
   @ResponseBody
-  @PutMapping( "/game/{code}" )
-  public ResponseEntity<GameDetails> play( final @PathVariable( "code" ) String code, final @RequestBody PlayGame game ) {
-    return service.play( code, game.getPlayer2() )
+  @PutMapping( "/pvp/{code}" )
+  public ResponseEntity<GameDetails> playAgainstPlayer( final @PathVariable( "code" ) String code,
+    final @RequestBody PlayGame game ) {
+    return service.playAgainstPlayer( code, game.getPlayer2() )
       .map( ResponseEntity::ok )
       .orElse( ResponseEntity.notFound().build() );
   }
 
   @ResponseBody
-  @GetMapping( "/game/{code}" )
-  public ResponseEntity<GameDetails> list( final @PathVariable( "code" ) String code ) {
-    return service.findGame( code )
+  @GetMapping( "/pvp/{code}" )
+  public ResponseEntity<GameDetails> findPvpGame( final @PathVariable( "code" ) String code ) {
+    return service.findPvpGame( code )
       .map( ResponseEntity::ok )
       .orElse( ResponseEntity.notFound().build() );
   }
 
   @ResponseBody
-  @GetMapping( "/game/list/all" )
-  public AllGames listAllGames() {
-    return new AllGames( service.listActiveGames(), service.listClosedGames() );
+  @GetMapping( "/pvp/list/all" )
+  public AllGames listAllPvpGames() {
+    return new AllGames( service.listActivePvpGames(), service.listClosedPvpGames() );
   }
 
   @ResponseBody
-  @GetMapping( "/game/list/open" )
-  public List<ActiveGame> listOpenGames() {
-    return service.listActiveGames();
+  @GetMapping( "/pvp/list/active" )
+  public List<ActiveGame> listActivePvpGames() {
+    return service.listActivePvpGames();
   }
 }

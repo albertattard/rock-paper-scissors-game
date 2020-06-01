@@ -28,7 +28,7 @@ class App extends Component {
   }
 
   createNewGame(player1) {
-    fetch('/game', {
+    fetch('/pvp', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({player1})
@@ -48,7 +48,7 @@ class App extends Component {
   }
 
   checkGameStatus() {
-    fetch(`/game/${this.state.code}`)
+    fetch(`/pvp/${this.state.code}`)
       .then(response => response.json())
       .then(json => {
         const {state} = json;
@@ -66,7 +66,7 @@ class App extends Component {
   }
 
   playerAgainstComputer(player) {
-    fetch(`/play/${player}`)
+    fetch(`/pvc/${player}`)
       .then(response => response.json())
       .then(json => {
         const {computer, player, outcome} = json;
@@ -80,7 +80,7 @@ class App extends Component {
   }
 
   playOpponent(code, player2) {
-    fetch(`/game/${code}`, {
+    fetch(`/pvp/${code}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({player2})
@@ -95,13 +95,13 @@ class App extends Component {
   }
 
   updateActiveGames() {
-    fetch('/game/list/open')
+    fetch('/pvp/list/active')
       .then(response => response.json())
       .then(activeGames => this.setState({activeGames}));
   }
 
   updateAllGames() {
-    fetch('/game/list/all')
+    fetch('/pvp/list/all')
       .then(response => response.json())
       .then(games => this.setState({
         activeGames: games.activeGames,

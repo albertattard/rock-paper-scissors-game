@@ -64,13 +64,13 @@ public class GameControllerTest {
   @DisplayName( "should return the hand provided by the service" )
   public void shouldReturnTheHandProvidedByTheService() throws Exception {
     final Hand hand = Hand.ROCK;
-    when( service.random() ).thenReturn( hand );
+    when( service.randomHand() ).thenReturn( hand );
 
-    mockMvc.perform( get( "/hand" ) )
+    mockMvc.perform( get( "/randomHand" ) )
       .andExpect( status().isOk() )
       .andExpect( jsonPath( "$.hand", is( hand.name() ) ) );
 
-    verify( service, times( 1 ) ).random();
+    verify( service, times( 1 ) ).randomHand();
   }
 
   @Test
@@ -78,15 +78,15 @@ public class GameControllerTest {
   public void shouldReturnTheOutcomeProvidedByTheService() throws Exception {
     final PvcGameResult result = new PvcGameResult( Hand.PAPER, Hand.ROCK, PvcOutcome.COMPUTER_WIN );
 
-    when( service.play( result.getPlayer() ) ).thenReturn( result );
+    when( service.playAgainstComputer( result.getPlayer() ) ).thenReturn( result );
 
-    mockMvc.perform( get( String.format( "/play/%s", result.getPlayer().name() ) ) )
+    mockMvc.perform( get( String.format( "/pvc/%s", result.getPlayer().name() ) ) )
       .andExpect( status().isOk() )
       .andExpect( jsonPath( "$.computer", is( result.getComputer().name() ) ) )
       .andExpect( jsonPath( "$.player", is( result.getPlayer().name() ) ) )
       .andExpect( jsonPath( "$.outcome", is( result.getOutcome().name() ) ) );
 
-    verify( service, times( 1 ) ).play( result.getPlayer() );
+    verify( service, times( 1 ) ).playAgainstComputer( result.getPlayer() );
   }
 
   @Test
@@ -96,17 +96,17 @@ public class GameControllerTest {
     final Hand player1 = Hand.ROCK;
     final ActiveGame game = createRandomGame();
 
-    when( service.create( eq( player1 ) ) ).thenReturn( game );
+    when( service.createPvpGame( eq( player1 ) ) ).thenReturn( game );
 
     mockMvc.perform(
-      post( "/game" )
+      post( "/pvp" )
         .contentType( APPLICATION_JSON )
         .content( toJson( new CreateGame( player1 ) ) )
     )
       .andExpect( status().isCreated() )
-      .andExpect( redirectedUrl( String.format( "/game/%s", game.getCode() ) ) );
+      .andExpect( redirectedUrl( String.format( "/pvp/%s", game.getCode() ) ) );
 
-    verify( service, times( 1 ) ).create( player1 );
+    verify( service, times( 1 ) ).createPvpGame( player1 );
   }
 
   @Test
@@ -115,15 +115,15 @@ public class GameControllerTest {
 
     final List<ActiveGame> games = createRandomGames( 5 );
 
-    when( service.listActiveGames() ).thenReturn( games );
+    when( service.listActivePvpGames() ).thenReturn( games );
 
-    mockMvc.perform( get( "/game/list/open" ) )
+    mockMvc.perform( get( "/pvp/list/active" ) )
       .andExpect( status().isOk() )
       .andExpect( jsonPath( "$" ).isArray() )
       .andExpect( jsonPath( "$", hasSize( games.size() ) ) )
       .andExpect( jsonPath( "$[*].code", containsInAnyOrder( toGameCode( games ) ) ) );
 
-    verify( service, times( 1 ) ).listActiveGames();
+    verify( service, times( 1 ) ).listActivePvpGames();
   }
 
   @Nested
@@ -134,12 +134,12 @@ public class GameControllerTest {
     public void shouldReturnNotFound() throws Exception {
       final String code = "00000000";
 
-      when( service.findGame( eq( code ) ) ).thenReturn( Optional.empty() );
+      when( service.findPvpGame( eq( code ) ) ).thenReturn( Optional.empty() );
 
-      mockMvc.perform( get( String.format( "/game/%s", code ) ) )
+      mockMvc.perform( get( String.format( "/pvp/%s", code ) ) )
         .andExpect( status().isNotFound() );
 
-      verify( service, times( 1 ) ).findGame( code );
+      verify( service, times( 1 ) ).findPvpGame( code );
     }
 
     @Test
@@ -149,10 +149,10 @@ public class GameControllerTest {
       final Hand player1 = Hand.ROCK;
       final GameState state = GameState.ACTIVE;
 
-      when( service.findGame( eq( code ) ) )
+      when( service.findPvpGame( eq( code ) ) )
         .thenReturn( Optional.of( new GameDetails().setCode( code ).setPlayer1( player1 ).setState( state ) ) );
 
-      mockMvc.perform( get( String.format( "/game/%s", code ) ) )
+      mockMvc.perform( get( String.format( "/pvp/%s", code ) ) )
         .andExpect( status().isOk() )
         .andExpect( jsonPath( "$" ).isMap() )
         .andExpect( jsonPath( "$.code", is( code ) ) )
@@ -162,7 +162,7 @@ public class GameControllerTest {
         .andExpect( jsonPath( "$.state", is( state.name() ) ) )
       ;
 
-      verify( service, times( 1 ) ).findGame( code );
+      verify( service, times( 1 ) ).findPvpGame( code );
     }
   }
 
@@ -175,15 +175,15 @@ public class GameControllerTest {
       final String code = "00000000";
       final Hand player2 = Hand.ROCK;
 
-      when( service.play( eq( code ), eq( player2 ) ) ).thenReturn( Optional.empty() );
+      when( service.playAgainstPlayer( eq( code ), eq( player2 ) ) ).thenReturn( Optional.empty() );
 
-      mockMvc.perform( put( String.format( "/game/%s", code ) )
+      mockMvc.perform( put( String.format( "/pvp/%s", code ) )
         .contentType( APPLICATION_JSON )
         .content( toJson( new PlayGame( player2 ) ) )
       )
         .andExpect( status().isNotFound() );
 
-      verify( service, times( 1 ) ).play( code, player2 );
+      verify( service, times( 1 ) ).playAgainstPlayer( code, player2 );
     }
 
     @Test
@@ -198,9 +198,9 @@ public class GameControllerTest {
         .setState( GameState.CLOSED )
         .setOutcome( PvpOutcome.DRAW );
 
-      when( service.play( eq( code ), eq( player2 ) ) ).thenReturn( Optional.of( details ) );
+      when( service.playAgainstPlayer( eq( code ), eq( player2 ) ) ).thenReturn( Optional.of( details ) );
 
-      mockMvc.perform( put( String.format( "/game/%s", code ) )
+      mockMvc.perform( put( String.format( "/pvp/%s", code ) )
         .contentType( APPLICATION_JSON )
         .content( toJson( new PlayGame( player2 ) ) )
       )
@@ -213,7 +213,7 @@ public class GameControllerTest {
         .andExpect( jsonPath( "$.state", is( details.getState().name() ) ) )
       ;
 
-      verify( service, times( 1 ) ).play( code, player2 );
+      verify( service, times( 1 ) ).playAgainstPlayer( code, player2 );
     }
   }
 
@@ -221,10 +221,10 @@ public class GameControllerTest {
   @DisplayName( "should return all game" )
   public void shouldReturnAllGames() throws Exception {
 
-    when( service.listActiveGames() ).thenReturn( Collections.emptyList() );
-    when( service.listClosedGames() ).thenReturn( Collections.emptyList() );
+    when( service.listActivePvpGames() ).thenReturn( Collections.emptyList() );
+    when( service.listClosedPvpGames() ).thenReturn( Collections.emptyList() );
 
-    mockMvc.perform( get( String.format( "/game/list/all" ) ) )
+    mockMvc.perform( get( String.format( "/pvp/list/all" ) ) )
       .andExpect( status().isOk() )
       .andExpect( jsonPath( "$" ).isMap() )
       .andExpect( jsonPath( "$.activeGames" ).isArray() )
@@ -233,8 +233,8 @@ public class GameControllerTest {
       .andExpect( jsonPath( "$.closedGames" ).isEmpty() )
     ;
 
-    verify( service, times( 1 ) ).listActiveGames();
-    verify( service, times( 1 ) ).listClosedGames();
+    verify( service, times( 1 ) ).listActivePvpGames();
+    verify( service, times( 1 ) ).listClosedPvpGames();
   }
 
   private String[] toGameCode( final List<ActiveGame> games ) {

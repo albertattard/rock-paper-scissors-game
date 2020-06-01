@@ -57,7 +57,7 @@ public class GameServiceTest {
       final RandomService randomService = mockRandomService( expectedHand );
 
       final GameService service = new GameService( codeService, repository, randomService );
-      final Hand hand = service.random();
+      final Hand hand = service.randomHand();
       assertSame( expectedHand, hand );
 
       verifyMocks( randomService );
@@ -91,7 +91,7 @@ public class GameServiceTest {
       final GameService service = new GameService( codeService, repository, randomService );
 
       final PvcGameResult result = new PvcGameResult( computer, player, outcome );
-      assertEquals( result, service.play( player ) );
+      assertEquals( result, service.playAgainstComputer( player ) );
 
       verifyMocks( randomService );
       verifyNoInteractions( codeService );
@@ -130,7 +130,7 @@ public class GameServiceTest {
 
         final GameService service = new GameService( codeService, repository, randomService );
 
-        final ActiveGame created = service.create( gameToSaved.getPlayer1() );
+        final ActiveGame created = service.createPvpGame( gameToSaved.getPlayer1() );
         assertEquals( toActiveGame( gameToSaved ), created );
 
         verify( codeService, times( 1 ) ).nextCode( 8 );
@@ -156,7 +156,7 @@ public class GameServiceTest {
 
         final GameService service = new GameService( codeService, repository, randomService );
 
-        final List<ActiveGame> games = service.listActiveGames();
+        final List<ActiveGame> games = service.listActivePvpGames();
         assertEquals( numberOfGamesInDb, games.size() );
         assertEquals( toActiveGame( gamesInDb ), games );
 
@@ -179,7 +179,7 @@ public class GameServiceTest {
 
         final GameService service = new GameService( codeService, repository, randomService );
 
-        final List<GameDetails> games = service.listClosedGames();
+        final List<GameDetails> games = service.listClosedPvpGames();
         assertEquals( numberOfGamesInDb, games.size() );
         assertEquals( toGameDetails( gamesInDb ), games );
 
@@ -205,7 +205,7 @@ public class GameServiceTest {
         when( repository.findById( eq( code ) ) ).thenReturn( Optional.empty() );
 
         final GameService service = new GameService( codeService, repository, randomService );
-        final Optional<GameDetails> game = service.findGame( code );
+        final Optional<GameDetails> game = service.findPvpGame( code );
         assertNotNull( game );
         assertTrue( game.isEmpty() );
 
@@ -226,7 +226,7 @@ public class GameServiceTest {
         when( repository.findById( eq( gameInDb.getCode() ) ) ).thenReturn( Optional.of( gameInDb ) );
 
         final GameService service = new GameService( codeService, repository, randomService );
-        final Optional<GameDetails> game = service.findGame( gameInDb.getCode() );
+        final Optional<GameDetails> game = service.findPvpGame( gameInDb.getCode() );
         assertNotNull( game );
         assertFalse( game.isEmpty() );
 
@@ -254,7 +254,7 @@ public class GameServiceTest {
         when( repository.findById( eq( gameInDb.getCode() ) ) ).thenReturn( Optional.of( gameInDb ) );
 
         final GameService service = new GameService( codeService, repository, randomService );
-        final Optional<GameDetails> game = service.findGame( gameInDb.getCode() );
+        final Optional<GameDetails> game = service.findPvpGame( gameInDb.getCode() );
         assertNotNull( game );
         assertFalse( game.isEmpty() );
 
@@ -289,7 +289,7 @@ public class GameServiceTest {
         when( repository.findByCodeAndStateEquals( eq( code ), eq( GameState.ACTIVE ) ) ).thenReturn( Optional.empty() );
 
         final GameService service = new GameService( codeService, repository, randomService );
-        final Optional<GameDetails> game = service.play( code, player2 );
+        final Optional<GameDetails> game = service.playAgainstPlayer( code, player2 );
         assertNotNull( game );
         assertTrue( game.isEmpty() );
 
@@ -323,7 +323,7 @@ public class GameServiceTest {
         when( repository.save( eq( gameToBeSaved ) ) ).thenReturn( gameToBeSaved );
 
         final GameService service = new GameService( codeService, repository, randomService );
-        final Optional<GameDetails> game = service.play( code, player2 );
+        final Optional<GameDetails> game = service.playAgainstPlayer( code, player2 );
         assertNotNull( game );
         assertFalse( game.isEmpty() );
 

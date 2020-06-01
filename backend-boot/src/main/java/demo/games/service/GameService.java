@@ -32,7 +32,18 @@ public class GameService {
     this.randomService = randomService;
   }
 
-  public ActiveGame create( final Hand player1 ) {
+  public Hand randomHand() {
+    final Hand[] candidates = Hand.values();
+    return candidates[randomService.nextInt( candidates.length )];
+  }
+
+  public PvcGameResult playAgainstComputer( final Hand player ) {
+    final Hand computer = randomHand();
+    final PvcOutcome outcome = PvcOutcome.of( computer, player );
+    return new PvcGameResult( computer, player, outcome );
+  }
+
+  public ActiveGame createPvpGame( final Hand player1 ) {
     final String code = codeService.nextCode( 8 );
 
     final Game game = new Game()
@@ -44,21 +55,32 @@ public class GameService {
     return new ActiveGame( code );
   }
 
-  public List<ActiveGame> listActiveGames() {
+  @Transactional
+  public Optional<GameDetails> playAgainstPlayer( final String code, final Hand player2 ) {
+    return repository.findByCodeAndStateEquals( code, ACTIVE )
+      .map( game -> repository.save(
+        game.setPlayer2( player2 )
+          .setOutcome( PvpOutcome.of( game.getPlayer1(), player2 ) )
+          .setState( CLOSED ) )
+      )
+      .map( GameService::toGameDetails );
+  }
+
+  public List<ActiveGame> listActivePvpGames() {
     return repository.findByStateEquals( ACTIVE )
       .stream()
       .map( r -> new ActiveGame( r.getCode() ) )
       .collect( Collectors.toList() );
   }
 
-  public List<GameDetails> listClosedGames() {
+  public List<GameDetails> listClosedPvpGames() {
     return repository.findByStateEquals( CLOSED )
       .stream()
-      .map( this::toGameDetails )
+      .map( GameService::toGameDetails )
       .collect( Collectors.toList() );
   }
 
-  public Optional<GameDetails> findGame( final String code ) {
+  public Optional<GameDetails> findPvpGame( final String code ) {
     return repository.findById( code )
       .map( game -> {
           final GameDetails details = new GameDetails()
@@ -76,29 +98,7 @@ public class GameService {
       );
   }
 
-  public PvcGameResult play( final Hand player ) {
-    final Hand computer = random();
-    final PvcOutcome outcome = PvcOutcome.of( computer, player );
-    return new PvcGameResult( computer, player, outcome );
-  }
-
-  public Hand random() {
-    final Hand[] candidates = Hand.values();
-    return candidates[randomService.nextInt( candidates.length )];
-  }
-
-  @Transactional
-  public Optional<GameDetails> play( final String code, final Hand player2 ) {
-    return repository.findByCodeAndStateEquals( code, ACTIVE )
-      .map( game -> repository.save(
-        game.setPlayer2( player2 )
-          .setOutcome( PvpOutcome.of( game.getPlayer1(), player2 ) )
-          .setState( CLOSED ) )
-      )
-      .map( this::toGameDetails );
-  }
-
-  private GameDetails toGameDetails( Game game ) {
+  private static GameDetails toGameDetails( Game game ) {
     return new GameDetails()
       .setCode( game.getCode() )
       .setState( game.getState() )
@@ -107,7 +107,7 @@ public class GameService {
       .setOutcome( game.getOutcome() );
   }
 
-  private boolean shouldIncludeDetails( final GameState state ) {
+  private static boolean shouldIncludeDetails( final GameState state ) {
     return state == CLOSED;
   }
 }

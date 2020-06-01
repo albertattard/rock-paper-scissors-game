@@ -35,7 +35,7 @@ public class PvcGameApplicationTests {
       new RandomHand( Hand.SCISSORS )
     );
 
-    final String url = String.format( "http://localhost:%d/hand", port );
+    final String url = String.format( "http://localhost:%d/randomHand", port );
     assertThat( this.restTemplate.getForObject( url, RandomHand.class ) )
       .isIn( candidates );
   }
@@ -50,7 +50,7 @@ public class PvcGameApplicationTests {
       new PvcGameResult( Hand.SCISSORS, player, PvcOutcome.PLAYER_WIN )
     );
 
-    final String url = String.format( "http://localhost:%d/play/%s", port, player.name() );
+    final String url = String.format( "http://localhost:%d/pvc/%s", port, player.name() );
     assertThat( this.restTemplate.getForObject( url, PvcGameResult.class ) )
       .isIn( outcomes );
   }
@@ -65,7 +65,7 @@ public class PvcGameApplicationTests {
       new PvcGameResult( Hand.SCISSORS, player1, PvcOutcome.PLAYER_WIN )
     );
 
-    final String url = String.format( "http://localhost:%d/play/%s", port, player1.name() );
+    final String url = String.format( "http://localhost:%d/pvc/%s", port, player1.name() );
     assertThat( this.restTemplate.getForObject( url, PvcGameResult.class ) )
       .isIn( outcomes );
   }
