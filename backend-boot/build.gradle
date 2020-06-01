@@ -46,6 +46,9 @@ dependencies {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
   }
 
+  /* Guava/SHA-256 */
+  testImplementation 'com.google.guava:guava:29.0-jre'
+
   /* Data */
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
   implementation 'org.flywaydb:flyway-core:6.4.3'
@@ -58,13 +61,14 @@ dependencies {
 test {
   useJUnitPlatform()
   testLogging {
-    events = ['FAILED', 'PASSED', 'SKIPPED', 'STANDARD_OUT']
+    // events = ['FAILED', 'PASSED', 'SKIPPED', 'STANDARD_OUT']
+    events = ['FAILED', 'PASSED', 'SKIPPED']
   }
 }
 
 bootRun {
   doFirst {
-    file('.env').readLines().each() {
+    file("$rootDir/.env").readLines().each() {
       def (key, value) = it.tokenize('=')
       environment key, value
     }
@@ -78,5 +82,5 @@ pitest {
 }
 
 build {
-  dependsOn pitest
+  dependsOn 'pitest'
 }

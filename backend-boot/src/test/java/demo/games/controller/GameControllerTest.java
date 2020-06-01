@@ -4,13 +4,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import demo.games.model.ActiveGame;
 import demo.games.model.CreateGame;
+import demo.games.model.GameDetails;
+import demo.games.model.GameState;
 import demo.games.model.Hand;
+import demo.games.model.PlayGame;
 import demo.games.model.PvcGameResult;
 import demo.games.model.PvcOutcome;
+import demo.games.model.PvpOutcome;
 import demo.games.resource.GameController;
 import demo.games.service.GameService;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,19 +32,21 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /* Just load the following controller and all it needs */
 @WebMvcTest( GameController.class )
-@DisplayName( "PvP game controller" )
+@DisplayName( "Game controller" )
 public class GameControllerTest {
 
   @Autowired
@@ -45,6 +54,11 @@ public class GameControllerTest {
 
   @MockBean
   private GameService service;
+
+  @BeforeEach
+  public void setUp() {
+    reset( service );
+  }
 
   @Test
   @DisplayName( "should return the hand provided by the service" )
@@ -87,7 +101,7 @@ public class GameControllerTest {
     mockMvc.perform(
       post( "/game" )
         .contentType( APPLICATION_JSON )
-        .content( createGameAsJson( player1 ) )
+        .content( toJson( new CreateGame( player1 ) ) )
     )
       .andExpect( status().isCreated() )
       .andExpect( redirectedUrl( String.format( "/game/%s", game.getCode() ) ) );
@@ -112,31 +126,118 @@ public class GameControllerTest {
     verify( service, times( 1 ) ).listActiveGames();
   }
 
+  @Nested
+  @DisplayName( "game details" )
+  class ReturnGameDetails {
+    @Test
+    @DisplayName( "should return 404 when game is not found or not active" )
+    public void shouldReturnNotFound() throws Exception {
+      final String code = "00000000";
+
+      when( service.findGame( eq( code ) ) ).thenReturn( Optional.empty() );
+
+      mockMvc.perform( get( String.format( "/game/%s", code ) ) )
+        .andExpect( status().isNotFound() );
+
+      verify( service, times( 1 ) ).findGame( code );
+    }
+
+    @Test
+    @DisplayName( "should return game details when game is found" )
+    public void shouldReturnGameDetails() throws Exception {
+      final String code = "00000000";
+      final Hand player1 = Hand.ROCK;
+      final GameState state = GameState.ACTIVE;
+
+      when( service.findGame( eq( code ) ) )
+        .thenReturn( Optional.of( new GameDetails().setCode( code ).setPlayer1( player1 ).setState( state ) ) );
+
+      mockMvc.perform( get( String.format( "/game/%s", code ) ) )
+        .andExpect( status().isOk() )
+        .andExpect( jsonPath( "$" ).isMap() )
+        .andExpect( jsonPath( "$.code", is( code ) ) )
+        .andExpect( jsonPath( "$.player1", is( player1.name() ) ) )
+        .andExpect( jsonPath( "$.player2" ).doesNotExist() )
+        .andExpect( jsonPath( "$.outcome" ).doesNotExist() )
+        .andExpect( jsonPath( "$.state", is( state.name() ) ) )
+      ;
+
+      verify( service, times( 1 ) ).findGame( code );
+    }
+  }
+
+  @Nested
+  @DisplayName( "game details" )
+  class PlayExistingGame {
+    @Test
+    @DisplayName( "should return 404 when game is not found or not active" )
+    public void shouldReturnNotFound() throws Exception {
+      final String code = "00000000";
+      final Hand player2 = Hand.ROCK;
+
+      when( service.play( eq( code ), eq( player2 ) ) ).thenReturn( Optional.empty() );
+
+      mockMvc.perform( put( String.format( "/game/%s", code ) )
+        .contentType( APPLICATION_JSON )
+        .content( toJson( new PlayGame( player2 ) ) )
+      )
+        .andExpect( status().isNotFound() );
+
+      verify( service, times( 1 ) ).play( code, player2 );
+    }
+
+    @Test
+    @DisplayName( "should return game result when playing an active game" )
+    public void shouldReturnResult() throws Exception {
+      final String code = "00000000";
+      final Hand player2 = Hand.ROCK;
+      final GameDetails details = new GameDetails()
+        .setCode( code )
+        .setPlayer1( Hand.ROCK )
+        .setPlayer2( player2 )
+        .setState( GameState.CLOSED )
+        .setOutcome( PvpOutcome.DRAW );
+
+      when( service.play( eq( code ), eq( player2 ) ) ).thenReturn( Optional.of( details ) );
+
+      mockMvc.perform( put( String.format( "/game/%s", code ) )
+        .contentType( APPLICATION_JSON )
+        .content( toJson( new PlayGame( player2 ) ) )
+      )
+        .andExpect( status().isOk() )
+        .andExpect( jsonPath( "$" ).isMap() )
+        .andExpect( jsonPath( "$.code", is( code ) ) )
+        .andExpect( jsonPath( "$.player1", is( details.getPlayer1().name() ) ) )
+        .andExpect( jsonPath( "$.player2", is( details.getPlayer2().name() ) ) )
+        .andExpect( jsonPath( "$.outcome", is( details.getOutcome().name() ) ) )
+        .andExpect( jsonPath( "$.state", is( details.getState().name() ) ) )
+      ;
+
+      verify( service, times( 1 ) ).play( code, player2 );
+    }
+  }
+
   @Test
-  @DisplayName( "should return 404 when game is not found" )
-  public void shouldReturnNotFoundGameDetails() throws Exception {
-    final String code = "00000000";
+  @DisplayName( "should return all game" )
+  public void shouldReturnAllGames() throws Exception {
 
-    when( service.findGame( eq( code ) ) ).thenReturn( Optional.empty() );
+    when( service.listActiveGames() ).thenReturn( Collections.emptyList() );
+    when( service.listClosedGames() ).thenReturn( Collections.emptyList() );
 
-    mockMvc.perform( get( String.format( "/game/%s", code ) ) )
-      .andExpect( status().isNotFound() );
+    mockMvc.perform( get( String.format( "/game/list/all" ) ) )
+      .andExpect( status().isOk() )
+      .andExpect( jsonPath( "$" ).isMap() )
+      .andExpect( jsonPath( "$.activeGames" ).isArray() )
+      .andExpect( jsonPath( "$.activeGames" ).isEmpty() )
+      .andExpect( jsonPath( "$.closedGames" ).isArray() )
+      .andExpect( jsonPath( "$.closedGames" ).isEmpty() )
+    ;
 
-    verify( service, times( 1 ) ).findGame( code );
+    verify( service, times( 1 ) ).listActiveGames();
+    verify( service, times( 1 ) ).listClosedGames();
   }
 
-  private String toJson( CreateGame game ) throws JsonProcessingException {
-    return new ObjectMapper()
-      .writer()
-      .withDefaultPrettyPrinter()
-      .writeValueAsString( game );
-  }
-
-  private String createGameAsJson( Hand player1 ) throws JsonProcessingException {
-    return toJson( new CreateGame( player1 ) );
-  }
-
-  private String[] toGameCode( List<ActiveGame> games ) {
+  private String[] toGameCode( final List<ActiveGame> games ) {
     final String[] codes = new String[games.size()];
     for ( int i = 0; i < games.size(); i++ ) {
       codes[i] = games.get( i ).getCode();
@@ -144,12 +245,19 @@ public class GameControllerTest {
     return codes;
   }
 
-  private List<ActiveGame> createRandomGames( int number ) {
+  private List<ActiveGame> createRandomGames( final int number ) {
     final List<ActiveGame> games = new ArrayList<>( number );
     for ( int i = 0; i < number; i++ ) {
       games.add( createRandomGame() );
     }
     return games;
+  }
+
+  private String toJson( final Object object ) throws JsonProcessingException {
+    return new ObjectMapper()
+      .writer()
+      .withDefaultPrettyPrinter()
+      .writeValueAsString( object );
   }
 
   private ActiveGame createRandomGame() {

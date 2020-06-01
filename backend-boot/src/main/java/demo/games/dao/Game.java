@@ -2,6 +2,7 @@ package demo.games.dao;
 
 import demo.games.model.GameState;
 import demo.games.model.Hand;
+import demo.games.model.PvpOutcome;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -21,14 +22,17 @@ public class Game {
   @Id
   private String code;
 
-  @Column( name = "player_1" )
   @Enumerated( EnumType.STRING )
+  @Column( name = "player_1" )
   private Hand player1;
 
-  @Column( name = "player_2" )
   @Enumerated( EnumType.STRING )
+  @Column( name = "player_2" )
   private Hand player2;
 
   @Enumerated( EnumType.STRING )
   private GameState state;
+
+  @Enumerated( EnumType.STRING )
+  private PvpOutcome outcome;
 }

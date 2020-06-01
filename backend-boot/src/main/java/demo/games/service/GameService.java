@@ -60,15 +60,15 @@ public class GameService {
 
   public Optional<GameDetails> findGame( final String code ) {
     return repository.findById( code )
-      .map( r -> {
+      .map( game -> {
           final GameDetails details = new GameDetails()
-            .setCode( r.getCode() )
-            .setState( r.getState() );
+            .setCode( game.getCode() )
+            .setState( game.getState() );
 
-          if ( shouldIncludeDetails( r.getState() ) ) {
-            details.setPlayer1( r.getPlayer1() )
-              .setPlayer2( r.getPlayer2() )
-              .setOutcome( PvpOutcome.of( r.getPlayer1(), r.getPlayer2() ) );
+          if ( shouldIncludeDetails( game.getState() ) ) {
+            details.setPlayer1( game.getPlayer1() )
+              .setPlayer2( game.getPlayer2() )
+              .setOutcome( game.getOutcome() );
           }
 
           return details;
@@ -90,7 +90,11 @@ public class GameService {
   @Transactional
   public Optional<GameDetails> play( final String code, final Hand player2 ) {
     return repository.findByCodeAndStateEquals( code, ACTIVE )
-      .map( game -> repository.save( game.setPlayer2( player2 ).setState( CLOSED ) ) )
+      .map( game -> repository.save(
+        game.setPlayer2( player2 )
+          .setOutcome( PvpOutcome.of( game.getPlayer1(), player2 ) )
+          .setState( CLOSED ) )
+      )
       .map( this::toGameDetails );
   }
 
@@ -100,7 +104,7 @@ public class GameService {
       .setState( game.getState() )
       .setPlayer1( game.getPlayer1() )
       .setPlayer2( game.getPlayer2() )
-      .setOutcome( PvpOutcome.of( game.getPlayer1(), game.getPlayer2() ) );
+      .setOutcome( game.getOutcome() );
   }
 
   private boolean shouldIncludeDetails( final GameState state ) {
