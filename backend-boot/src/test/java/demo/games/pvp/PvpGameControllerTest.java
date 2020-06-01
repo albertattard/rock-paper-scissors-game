@@ -44,7 +44,7 @@ public class PvpGameControllerTest {
   public void shouldCreateGameAndReturnCode() throws Exception {
 
     final Hand player1 = Hand.ROCK;
-    final GameResponse game = createRandomGame();
+    final ActiveGame game = createRandomGame();
 
     when( service.create( eq( player1 ) ) ).thenReturn( game );
 
@@ -63,17 +63,17 @@ public class PvpGameControllerTest {
   @DisplayName( "should return the list of open games" )
   public void shouldReturnOpenGames() throws Exception {
 
-    final List<GameResponse> games = createRandomGames( 5 );
+    final List<ActiveGame> games = createRandomGames( 5 );
 
-    when( service.listOpenGames() ).thenReturn( games );
+    when( service.listActiveGames() ).thenReturn( games );
 
-    mockMvc.perform( get( "/game/list/" ) )
+    mockMvc.perform( get( "/game/list/open" ) )
       .andExpect( status().isOk() )
       .andExpect( jsonPath( "$" ).isArray() )
       .andExpect( jsonPath( "$", hasSize( games.size() ) ) )
       .andExpect( jsonPath( "$[*].code", containsInAnyOrder( toGameCode( games ) ) ) );
 
-    verify( service, times( 1 ) ).listOpenGames();
+    verify( service, times( 1 ) ).listActiveGames();
   }
 
   @Test
@@ -100,7 +100,7 @@ public class PvpGameControllerTest {
     return toJson( new CreateGame( player1 ) );
   }
 
-  private String[] toGameCode( List<GameResponse> games ) {
+  private String[] toGameCode( List<ActiveGame> games ) {
     final String[] codes = new String[games.size()];
     for ( int i = 0; i < games.size(); i++ ) {
       codes[i] = games.get( i ).getCode();
@@ -108,15 +108,15 @@ public class PvpGameControllerTest {
     return codes;
   }
 
-  private List<GameResponse> createRandomGames( int number ) {
-    final List<GameResponse> games = new ArrayList<>( number );
+  private List<ActiveGame> createRandomGames( int number ) {
+    final List<ActiveGame> games = new ArrayList<>( number );
     for ( int i = 0; i < number; i++ ) {
       games.add( createRandomGame() );
     }
     return games;
   }
 
-  private GameResponse createRandomGame() {
-    return new GameResponse( RandomStringUtils.randomAlphanumeric( 8 ) );
+  private ActiveGame createRandomGame() {
+    return new ActiveGame( RandomStringUtils.randomAlphanumeric( 8 ) );
   }
 }

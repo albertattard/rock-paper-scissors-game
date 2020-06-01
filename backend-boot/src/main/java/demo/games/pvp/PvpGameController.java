@@ -25,7 +25,7 @@ public class PvpGameController {
   @ResponseBody
   @PostMapping( "/game" )
   public ResponseEntity<Void> create( @RequestBody CreateGame game ) throws URISyntaxException {
-    final GameResponse response = service.create( game.getPlayer1() );
+    final ActiveGame response = service.create( game.getPlayer1() );
     final URI uri = new URI( String.format( "/game/%s", response.getCode() ) );
     return ResponseEntity.created( uri ).build();
   }
@@ -47,8 +47,20 @@ public class PvpGameController {
   }
 
   @ResponseBody
-  @GetMapping( "/game/list" )
-  public List<GameResponse> list() {
-    return service.listOpenGames();
+  @GetMapping( "/game/list/all" )
+  public AllGames listAllGames() {
+    return new AllGames( service.listActiveGames(), service.listClosedGames() );
+  }
+
+  @ResponseBody
+  @GetMapping( "/game/list/open" )
+  public List<ActiveGame> listOpenGames() {
+    return service.listActiveGames();
+  }
+
+  @ResponseBody
+  @GetMapping( "/game/list/closed" )
+  public List<GameDetails> listClosedGames() {
+    return service.listClosedGames();
   }
 }

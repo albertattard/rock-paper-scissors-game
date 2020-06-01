@@ -3,10 +3,12 @@ package demo.games.pvp;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class GameResponse {
+@Accessors( chain = true )
+public class ActiveGame {
   private String code;
 }

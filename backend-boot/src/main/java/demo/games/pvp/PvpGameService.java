@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static demo.games.pvp.GameState.CLOSED;
-import static demo.games.pvp.GameState.OPEN;
+import static demo.games.pvp.GameState.ACTIVE;
 
 @Service
 public class PvpGameService {
@@ -22,22 +22,29 @@ public class PvpGameService {
     this.repository = repository;
   }
 
-  public GameResponse create( final Hand player1 ) {
+  public ActiveGame create( final Hand player1 ) {
     final String code = randomService.nextCode( 8 );
 
     final Game game = new Game()
       .setCode( code )
       .setPlayer1( player1 )
-      .setState( OPEN );
+      .setState( ACTIVE );
     repository.save( game );
 
-    return new GameResponse( code );
+    return new ActiveGame( code );
   }
 
-  public List<GameResponse> listOpenGames() {
-    return repository.findByStateEquals( OPEN )
+  public List<ActiveGame> listActiveGames() {
+    return repository.findByStateEquals( ACTIVE )
       .stream()
-      .map( r -> new GameResponse( r.getCode() ) )
+      .map( r -> new ActiveGame( r.getCode() ) )
+      .collect( Collectors.toList() );
+  }
+
+  public List<GameDetails> listClosedGames() {
+    return repository.findByStateEquals( CLOSED )
+      .stream()
+      .map( this::toGameDetails )
       .collect( Collectors.toList() );
   }
 
@@ -61,15 +68,18 @@ public class PvpGameService {
 
   @Transactional
   public Optional<GameDetails> play( final String code, final Hand player2 ) {
-    return repository.findByCodeAndStateEquals( code, OPEN )
+    return repository.findByCodeAndStateEquals( code, ACTIVE )
       .map( game -> repository.save( game.setPlayer2( player2 ).setState( CLOSED ) ) )
-      .map( game -> new GameDetails()
-        .setCode( game.getCode() )
-        .setState( game.getState() )
-        .setPlayer1( game.getPlayer1() )
-        .setPlayer2( game.getPlayer2() )
-        .setOutcome( determineOutcome( game.getPlayer1(), game.getPlayer2() ) )
-      );
+      .map( this::toGameDetails );
+  }
+
+  private GameDetails toGameDetails( Game game ) {
+    return new GameDetails()
+      .setCode( game.getCode() )
+      .setState( game.getState() )
+      .setPlayer1( game.getPlayer1() )
+      .setPlayer2( game.getPlayer2() )
+      .setOutcome( determineOutcome( game.getPlayer1(), game.getPlayer2() ) );
   }
 
   private boolean shouldIncludeDetails( final GameState state ) {

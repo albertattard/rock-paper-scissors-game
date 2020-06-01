@@ -3,6 +3,9 @@ plugins {
 
   id 'org.springframework.boot' version '2.3.0.RELEASE'
   id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+
+  /* PIT Mutation Testing */
+  id 'info.solidsoft.pitest' version '1.5.1'
 }
 
 java {
@@ -70,4 +73,15 @@ bootRun {
       environment key, value
     }
   }
+}
+
+pitest {
+  targetClasses = ['demo.games.*']
+  timestampedReports = false
+  junit5PluginVersion = '0.12'
+}
+
+build {
+  /* Have an issue with PiTest */
+  // dependsOn 'pitest'
 }

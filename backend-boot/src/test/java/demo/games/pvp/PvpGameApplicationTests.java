@@ -44,13 +44,13 @@ public class PvpGameApplicationTests {
     assertTrue( location.matches( "/game/[a-zA-Z0-9]{8}" ) );
     final String code = location.substring( 6 );
 
-    final GameResponse[] open = restTemplate.getForObject( listOpenPath(), GameResponse[].class );
+    final ActiveGame[] open = restTemplate.getForObject( listOpenPath(), ActiveGame[].class );
     assertNotNull( open );
     assertTrue( open.length > 0 );
 
-    final Comparator<GameResponse> comparator = Comparator.comparing( GameResponse::getCode );
+    final Comparator<ActiveGame> comparator = Comparator.comparing( ActiveGame::getCode );
     Arrays.sort( open, comparator );
-    assertTrue( Arrays.binarySearch( open, new GameResponse( code ), comparator ) >= 0 );
+    assertTrue( Arrays.binarySearch( open, new ActiveGame( code ), comparator ) >= 0 );
   }
 
   private String newGamePath() {
@@ -58,6 +58,6 @@ public class PvpGameApplicationTests {
   }
 
   private String listOpenPath() {
-    return String.format( "http://localhost:%d/game/list", port );
+    return String.format( "http://localhost:%d/game/list/open", port );
   }
 }
