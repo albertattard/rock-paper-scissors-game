@@ -1,0 +1,3 @@
+```bash
+$ gauge init js
+```
