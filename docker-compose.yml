@@ -27,9 +27,12 @@ services:
       - game-net
     env_file:
       - .env
+    volumes:
+      - ./docker/pgadmin4 :/pgadmin4/external
     environment:
       PGADMIN_DEFAULT_EMAIL: ${DATABASE_USERNAME}
       PGADMIN_DEFAULT_PASSWORD: ${DATABASE_PASSWORD}
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/external/servers.json
     ports:
       - "8000:80"
 networks:
