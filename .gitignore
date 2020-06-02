@@ -2,3 +2,4 @@
 **/build
 **/lsp
 .idea
+**/.DS_Store
