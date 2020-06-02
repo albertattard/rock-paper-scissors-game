@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -39,12 +38,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @DisplayName( "PvP game application" )
 @SpringBootTest( webEnvironment = WebEnvironment.RANDOM_PORT )
 public class PvpGameApplicationTests {
-
-  @LocalServerPort
-  private int port;
-
-  @Autowired
-  private TestRestTemplate restTemplate;
 
   @Test
   @DisplayName( "should play a game against another player" )
@@ -96,8 +89,16 @@ public class PvpGameApplicationTests {
   }
 
   private void playGameAndAssertResult( final Hand player1, final Hand player2, final String code ) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setContentType( MediaType.APPLICATION_JSON );
+
     final ResponseEntity<GameDetails> entity =
-      restTemplate.exchange( gameDetailsPath( code ), HttpMethod.PUT, createPlayRequestEntity( player2 ), GameDetails.class );
+      restTemplate.exchange(
+        gameDetailsPath( code ),
+        HttpMethod.PUT,
+        new HttpEntity<>( new PlayGame( player2 ), headers ),
+        GameDetails.class
+      );
 
     assertNotNull( entity );
     assertEquals( HttpStatus.OK, entity.getStatusCode() );
@@ -140,29 +141,27 @@ public class PvpGameApplicationTests {
     assertSame( GameState.CLOSED, game.getState() );
   }
 
-  private HttpEntity createPlayRequestEntity( final Hand player2 ) {
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setContentType( MediaType.APPLICATION_JSON );
-    return new HttpEntity<>( new PlayGame( player2 ), headers );
-  }
-
   private Set<String> toSetOfCodes( final Stream<ActiveGame> activeGames ) {
     return activeGames.map( ActiveGame::getCode ).collect( Collectors.toSet() );
   }
 
   private String newGamePath() {
-    return String.format( "http://localhost:%d/pvp", port );
+    return "/pvp";
   }
 
   private String listActivePath() {
-    return String.format( "http://localhost:%d/pvp/list/active", port );
+    return "/pvp/list/active";
   }
 
   private String listAllPath() {
-    return String.format( "http://localhost:%d/pvp/list/all", port );
+    return "/pvp/list/all";
   }
 
   private String gameDetailsPath( final String code ) {
-    return String.format( "http://localhost:%d/pvp/%s", port, code );
+    return String.format( "/pvp/%s", code );
   }
+
+  @Autowired
+  private TestRestTemplate restTemplate;
+
 }

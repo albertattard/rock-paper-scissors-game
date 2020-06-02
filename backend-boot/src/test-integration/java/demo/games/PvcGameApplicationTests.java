@@ -1,15 +1,14 @@
 package demo.games;
 
-import demo.games.model.RandomHand;
+import demo.games.model.Hand;
 import demo.games.model.PvcGameResult;
 import demo.games.model.PvcOutcome;
-import demo.games.model.Hand;
+import demo.games.model.RandomHand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
 
 import java.util.List;
 
@@ -20,12 +19,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest( webEnvironment = WebEnvironment.RANDOM_PORT )
 public class PvcGameApplicationTests {
 
-  @LocalServerPort
-  private int port;
-
-  @Autowired
-  private TestRestTemplate restTemplate;
-
   @Test
   @DisplayName( "should return a random hand" )
   public void shouldReturnARandomHand() {
@@ -35,8 +28,7 @@ public class PvcGameApplicationTests {
       new RandomHand( Hand.SCISSORS )
     );
 
-    final String url = String.format( "http://localhost:%d/randomHand", port );
-    assertThat( this.restTemplate.getForObject( url, RandomHand.class ) )
+    assertThat( this.restTemplate.getForObject( randomHandPath(), RandomHand.class ) )
       .isIn( candidates );
   }
 
@@ -50,23 +42,19 @@ public class PvcGameApplicationTests {
       new PvcGameResult( Hand.SCISSORS, player, PvcOutcome.PLAYER_WIN )
     );
 
-    final String url = String.format( "http://localhost:%d/pvc/%s", port, player.name() );
-    assertThat( this.restTemplate.getForObject( url, PvcGameResult.class ) )
+    assertThat( this.restTemplate.getForObject( pvcPath( player ), PvcGameResult.class ) )
       .isIn( outcomes );
   }
 
-  @Test
-  @DisplayName( "should play against another player" )
-  public void shouldPlayAgainstAnotherPlayer() {
-    final Hand player1 = Hand.ROCK;
-    final var outcomes = List.of(
-      new PvcGameResult( Hand.ROCK, player1, PvcOutcome.DRAW ),
-      new PvcGameResult( Hand.PAPER, player1, PvcOutcome.COMPUTER_WIN ),
-      new PvcGameResult( Hand.SCISSORS, player1, PvcOutcome.PLAYER_WIN )
-    );
-
-    final String url = String.format( "http://localhost:%d/pvc/%s", port, player1.name() );
-    assertThat( this.restTemplate.getForObject( url, PvcGameResult.class ) )
-      .isIn( outcomes );
+  private String pvcPath( final Hand player ) {
+    return String.format( "/pvc/%s", player.name() );
   }
+
+  private String randomHandPath() {
+    return "/randomHand";
+  }
+
+  @Autowired
+  private TestRestTemplate restTemplate;
+
 }

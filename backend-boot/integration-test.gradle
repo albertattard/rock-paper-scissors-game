@@ -26,7 +26,8 @@ task integrationTest(type: Test) {
   useJUnitPlatform()
 
   testLogging {
-    events = ['FAILED', 'PASSED', 'SKIPPED', 'STANDARD_OUT']
+    // events = ['FAILED', 'PASSED', 'SKIPPED', 'STANDARD_OUT']
+    events = ['FAILED', 'PASSED', 'SKIPPED']
   }
 
   doFirst {
