@@ -10,19 +10,18 @@ import demo.games.model.PvcGameResult;
 import demo.games.model.RandomHand;
 import demo.games.service.GameService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-@Controller
+@RestController
 public class GameController {
 
   private final GameService service;
@@ -32,17 +31,16 @@ public class GameController {
   }
 
   @GetMapping( "/randomHand" )
-  public @ResponseBody RandomHand randomHand() {
+  public RandomHand randomHand() {
     final Hand hand = service.randomHand();
     return new RandomHand( hand );
   }
 
   @GetMapping( "/pvc/{player}" )
-  public @ResponseBody PvcGameResult playAgainstComputer( final @PathVariable( "player" ) Hand player ) {
+  public PvcGameResult playAgainstComputer( final @PathVariable( "player" ) Hand player ) {
     return service.playAgainstComputer( player );
   }
 
-  @ResponseBody
   @PostMapping( "/pvp" )
   public ResponseEntity<ActiveGame> createPvpGame( final @RequestBody CreateGame game ) throws URISyntaxException {
     final ActiveGame response = service.createPvpGame( game.getPlayer1() );
@@ -50,7 +48,6 @@ public class GameController {
     return ResponseEntity.created( uri ).body( response );
   }
 
-  @ResponseBody
   @PutMapping( "/pvp/{code}" )
   public ResponseEntity<GameDetails> playAgainstPlayer( final @PathVariable( "code" ) String code,
     final @RequestBody PlayGame game ) {
@@ -59,7 +56,6 @@ public class GameController {
       .orElse( ResponseEntity.notFound().build() );
   }
 
-  @ResponseBody
   @GetMapping( "/pvp/{code}" )
   public ResponseEntity<GameDetails> findPvpGame( final @PathVariable( "code" ) String code ) {
     return service.findPvpGame( code )
@@ -67,13 +63,11 @@ public class GameController {
       .orElse( ResponseEntity.notFound().build() );
   }
 
-  @ResponseBody
   @GetMapping( "/pvp/list/all" )
   public AllGames listAllPvpGames() {
     return new AllGames( service.listActivePvpGames(), service.listClosedPvpGames() );
   }
 
-  @ResponseBody
   @GetMapping( "/pvp/list/active" )
   public List<ActiveGame> listActivePvpGames() {
     return service.listActivePvpGames();
