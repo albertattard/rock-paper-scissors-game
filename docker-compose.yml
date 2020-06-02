@@ -19,6 +19,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  pgadmin4:
+    container_name: pgadmin4
+    image: dpage/pgadmin4:4.22
+    restart: unless-stopped
+    networks:
+      - game-net
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${DATABASE_USERNAME}
+      PGADMIN_DEFAULT_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "8000:80"
 networks:
   game-net:
     driver: bridge
