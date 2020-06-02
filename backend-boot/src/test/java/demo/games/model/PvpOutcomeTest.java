@@ -7,9 +7,9 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 
 import java.util.Map;
 
-import static test.utils.Sha256Utils.computeSha256;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static test.utils.Sha256Utils.computeSha256;
 
 @DisplayName( "PvP outcome" )
 public class PvpOutcomeTest {

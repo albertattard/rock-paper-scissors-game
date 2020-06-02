@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static test.utils.Sha256Utils.computeSha256;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static test.utils.Sha256Utils.computeSha256;
 
 @DisplayName( "Game state" )
 public class GameStateTest {
