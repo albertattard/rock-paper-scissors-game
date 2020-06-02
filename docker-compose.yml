@@ -11,6 +11,7 @@ services:
     ports:
       - ${DATABASE_PORT}:5432
     environment:
+      PGUSER: ${DATABASE_USERNAME}
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: ${DATABASE_NAME}

@@ -23,5 +23,5 @@ task copyFrontendResources {
 task assembleAll {
   group = 'build'
   description = 'Build combined backend & frontend into one JAR'
-  dependsOn('copyFrontendResources', ':frontend-react:build')
+  dependsOn('copyFrontendResources', ':backend-boot:build')
 }
